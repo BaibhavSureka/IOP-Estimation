@@ -3,6 +3,7 @@
 ## 📌 Project Overview
 **IOP Estimation** (Intraocular Pressure Estimation) is a machine learning-based project designed to estimate intraocular pressure, which is a crucial factor in diagnosing and managing **glaucoma**. This project utilizes sensor data, machine learning models, and data analytics to provide insights into eye health.
 
+
 ## 🔬 Features
 - **Real-time sensor data processing** 📊
 - **Machine learning model for IOP prediction** 🤖
@@ -22,11 +23,6 @@
 ```sh
 git clone https://github.com/BaibhavSureka/IOP-Estimation.git
 cd IOP-Estimation
-```
-
-### **2️⃣ Install Dependencies**
-```sh
-pip install -r requirements.txt
 ```
 
 ### **3️⃣ Run the Application**

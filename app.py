@@ -570,18 +570,42 @@ def predict_glaucoma(sensor_data, demographic_info=None, model_components=None):
         # Make prediction
         prediction_probs = model.predict_proba(X_combined)
         
-        # Calculate average probability for multiple readings
+        # Calculate both probability-based and voting-based results
+        # Calculate both probability-based and voting-based results
         avg_prob = np.mean(prediction_probs, axis=0)
+        prob_based_class = 1 if avg_prob[1] > 0.5 else 0
+        prob_confidence = avg_prob[prob_based_class]
+
+        # Create individual predictions using threshold of 0.5
+        individual_predictions = [1 if prob[1] > 0.5 else 0 for prob in prediction_probs]
+
+        # Use majority voting for final prediction
+        vote_based_class = 1 if sum(individual_predictions) > len(individual_predictions)/2 else 0
+
+        # Calculate confidence as the proportion of readings that match the final class
+        if vote_based_class == 1:
+            vote_confidence = sum(individual_predictions) / len(individual_predictions)
+        else:
+            vote_confidence = (len(individual_predictions) - sum(individual_predictions)) / len(individual_predictions)
+
+        # Use majority voting as the primary method
+        final_class = vote_based_class
+        confidence = vote_confidence
         
-        # Determine final prediction
-        final_class = 1 if avg_prob[1] > 0.5 else 0
-        confidence = avg_prob[final_class]
+        # Create readable labels for individual readings
+        reading_analysis = []
+        for i, prob in enumerate(prediction_probs):
+            label = "Glaucoma" if prob[1] > 0.5 else "Normal"
+            reading_analysis.append(f"Reading {i+1}: {label} (Probability: {prob[1]:.2f})")
         
         # Prepare detailed results
         details = {
             'individual_probabilities': prediction_probs,
             'average_probability': avg_prob,
+            'probability_based': {'prediction': prob_based_class, 'confidence': prob_confidence},
+            'voting_based': {'prediction': vote_based_class, 'confidence': vote_confidence},
             'num_readings': len(processed_data),
+            'reading_analysis': reading_analysis,
             'feature_values': {
                 feature: processed_data[feature].mean() 
                 for feature in selected_features
@@ -595,7 +619,8 @@ def predict_glaucoma(sensor_data, demographic_info=None, model_components=None):
         print(f"Error during prediction: {e}")
         # Default to no glaucoma with low confidence
         return 0, 0.5, {'error': str(e)}
-
+    
+    
 # Main function to run the program
 def main():
     # Check if we need to train or load model
@@ -611,23 +636,14 @@ def main():
             print("Error: Training dataset not found. Please provide glaucoma_dataset.csv")
             return
     
-    # Example sensor data (as provided in your message)
-    sensor_data_str = """3.3,3.3,20.0
-3.3,3.3,20.0
-3.3,3.3,20.0
-3.3,3.3,20.0
-0.08,0.1,6.67
-3.3,3.3,20.0
-3.3,3.3,20.0
-3.3,3.3,20.0
-3.3,3.3,20.0
-0.03,0.07,4.73"""
-    
-    # Convert to DataFrame for easier handling
-    lines = sensor_data_str.strip().split('\n')
-    rows = [line.split(',') for line in lines]
-    sensor_df = pd.DataFrame(rows, columns=['Piezo', 'FSR', 'IOP'])
-    sensor_df = sensor_df.astype(float)
+    # Read sensor data from CSV file
+    sensor_file = 'sensor_data.csv'  # Change this to your sensor data file name
+    try:
+        sensor_df = pd.read_csv(sensor_file)
+        print(f"Loaded sensor data from {sensor_file}")
+    except FileNotFoundError:
+        print(f"Error: Sensor data file {sensor_file} not found.")
+        return
     
     # Set demographic information
     demographic_info = {'Age': 55, 'Gender': 1}  # Example: 55-year-old male
@@ -635,24 +651,28 @@ def main():
     # Make prediction
     prediction, confidence, details = predict_glaucoma(sensor_df, demographic_info, model_components)
     
-    # Output results
-    result = "Glaucoma" if prediction == 1 else "No Glaucoma"
-    print(f"\n=== Glaucoma Prediction Results ===")
-    print(f"Prediction: {result}")
-    print(f"Confidence: {confidence:.2f}")
-    print(f"Number of readings analyzed: {details['num_readings']}")
-    
-    # Print feature importance if available
-    if 'feature_values' in details:
-        print("\nKey measurements:")
-        print(f"Average IOP: {details['feature_values'].get('IOP', 'N/A'):.2f} mmHg")
-    
     # Print individual reading probabilities for transparency
     if 'individual_probabilities' in details:
         print("\nIndividual reading analysis:")
         for i, probs in enumerate(details['individual_probabilities']):
             reading_result = "Glaucoma" if probs[1] > 0.5 else "Normal"
             print(f"Reading {i+1}: {reading_result} (Probability: {probs[1]:.2f})")
+    
+    # Output results
+    result = "Glaucoma" if prediction == 1 else "No Glaucoma"
+    print(f"\n=== Glaucoma Prediction Results ===")
+    print(f"Prediction: {result}")
+    print(f"Confidence: {confidence:.2f}")
+    print(f"Number of readings analyzed: {details['num_readings']}")
 
+    # Print feature importance if available
+    # if 'feature_values' in details:
+    #     print("\nKey measurements:")
+    #     iop_value = details['feature_values'].get('IOP', 'N/A')
+    #     if isinstance(iop_value, (int, float)):
+    #         print(f"Average IOP: {iop_value:.2f} mmHg")
+    #     else:
+    #         print(f"Average IOP: {iop_value}")
+    
 if __name__ == "__main__":
     main()

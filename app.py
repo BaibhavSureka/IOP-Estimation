@@ -52,7 +52,7 @@ def preprocess_dataset(df, is_training=True, verbose=True):
         # Add default values for missing columns
         for col in missing_cols:
             if col == 'Age':
-                df['Age'] = 50  # Default age
+                df['Age'] = 20  # Default age
             elif col == 'Gender':
                 df['Gender'] = 0  # Default gender (0 = female, 1 = male)
             elif col == 'IOP' and 'Piezo' in df.columns and 'FSR' in df.columns:
@@ -154,7 +154,7 @@ def process_sensor_data(sensor_data, demographic_info=None):
     """
     # Set default demographic info if not provided
     if demographic_info is None:
-        demographic_info = {'Age': 50, 'Gender': 0}
+        demographic_info = {'Age': 20, 'Gender': 0}
     
     # Load data if it's a path
     if isinstance(sensor_data, str):

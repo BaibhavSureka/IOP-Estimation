@@ -8,7 +8,7 @@ SoftwareSerial softSerial(D6, D5); // RX, TX (we only use RX)
 
 const char *ssid = "Baibhav";
 const char *password = "9693354356";
-const char *serverUrl = "http://192.168.151.175:5000/iop";
+const char *serverUrl = "http://10.50.180.175:5000/iop";
 
 void connectWiFi()
 {
